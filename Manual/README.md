@@ -33,9 +33,9 @@
 5. Click "OK"
 6. Wait until tool is fully complete
    * Green sucess bar at the top of the map will appear  
-   ![p11](https://github.com/bcgov/new2Q-reports/blob/master/Manual/Supporting%20Imgs/Plugin_11.PNG "Sucess Bar")   
+   ![p11](https://github.com/bcgov/new2Q-reports/blob/master/Manual/Supporting%20Imgs/plugin_11.PNG "Sucess Bar")   
    * To see where the PDFs exported Click "Show More"  
-   ![p11b](https://github.com/bcgov/new2Q-reports/blob/master/Manual/Supporting%20Imgs/Plugin_b.PNG "Show More")
+   ![p11b](https://github.com/bcgov/new2Q-reports/blob/master/Manual/Supporting%20Imgs/plugin_b.PNG "Show More")
   
 ## Working with QGIS
 ### Layers and Data
