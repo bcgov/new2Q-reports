@@ -16,14 +16,14 @@
    * Plugins > FNBLine
 2. Select AOI
    * Option 1 (Vector Layer):  
-   -If AOI is loaded in QGIS (Drag and Drop), select  
-   the vectory layer using the dropdown arrow
+     - If AOI is loaded in QGIS (Drag and Drop), select  
+     the vectory layer using the dropdown arrow
    * Option 2 (Path):  
-   - If AOI is loaded from a path, select Browse  
-   - Locate and select the file. Click "Open"
+     - If AOI is loaded from a path, select Browse  
+     - Locate and select the file. Click "Open"
    * Option 2 (Table Name):  
-   - If AOI is an Oracle Database Table, copy  
-   and paste the schema.table name in the text bar
+     - If AOI is an Oracle Database Table, copy  
+     and paste the schema.table name in the text bar
 3. Input Database Connection Info
    * Add username and password 
 4. Identify PDF Output Path 
