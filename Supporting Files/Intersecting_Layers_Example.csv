@@ -1,0 +1,5 @@
+Name,Feature_Name,Location,Special Queries,Grouping,Field Expansion
+Snowmobile Management Areas,WHSE_WILDLIFE_INVENTORY.AMA_SNOWMOBILE_MGMT_AREAS_SP,BCGW,,1,
+Wildlife Habitat Areas,WHSE_WILDLIFE_MANAGEMENT.WCP_WILDLIFE_HABITAT_AREA_POLY,BCGW,,2,COMMON_SPECIES_NAME
+BC Lakes,Lakes,C:/My/Location/Path/For/FeatureClassinGeodatabase/Data.gdb,,3,DISTRICT
+Douglas Fir Trees,tree,C:\My\Location\Path\For\Shapefile\tree.shp,Species = 'FDI',1,
