@@ -5,13 +5,13 @@
 ### Setup
 1. Open Qgis
 2. Create new project
-  * Project > New (ctrl+n)
+   * Project > New (ctrl+n)
 3. To input AOI using plugin skip to Plugin Step 1
 4. Drag and drop your AOI into QGIS
-5. Check box to turn layer visibility on
-   ![p5](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Layer Visibility")
+5. Check box to turn layer visibility on  
+   ![p5](https://github.com/bcgov/new2Q-reports/blob/master/Manual/Supporting%20Imgs/Plugin_5.PNG "Layer Visibility")
 ### Plugin 
-   ![p6m](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Complete Plugin")
+   ![p6m](https://github.com/bcgov/new2Q-reports/blob/master/Manual/Supporting%20Imgs/Plugin_6_markup.PNG "Complete Plugin")
 1. Open the plugin
    * Plugins > FNBLine
 2. Select AOI
@@ -33,9 +33,9 @@
 5. Click "OK"
 6. Wait until tool is fully complete
    * Green sucess bar at the top of the map will appear  
-   ![p11](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Sucess Bar")   
+   ![p11](https://github.com/bcgov/new2Q-reports/blob/master/Manual/Supporting%20Imgs/Plugin_11.PNG "Sucess Bar")   
    * To see where the PDFs exported Click "Show More"  
-   ![p11b](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Show More")
+   ![p11b](https://github.com/bcgov/new2Q-reports/blob/master/Manual/Supporting%20Imgs/Plugin_b.PNG "Show More")
   
 ## Working with QGIS
 ### Layers and Data
