@@ -1,5 +1,6 @@
 # Manual
 
+For more information on how to use QGIS, visit [QGIS Training Manual](https://docs.qgis.org/3.4/en/docs/training_manual/index.html) for some great tutorials
 
 ## Working with the Plugin
 ### Setup
