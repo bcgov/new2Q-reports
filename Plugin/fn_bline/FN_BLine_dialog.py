@@ -26,6 +26,7 @@ import os
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
+from qgis.PyQt.QtWidgets import QFileDialog
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -33,7 +34,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 
 class FNBLineDialog(QtWidgets.QDialog, FORM_CLASS):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, stored_input_path='', stored_output_path=''):
         """Constructor."""
         super(FNBLineDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
@@ -42,3 +43,18 @@ class FNBLineDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        self.btn_select_input.clicked.connect(self.select_file)
+        self.btn_select_output.clicked.connect(self.select_output)
+        self.pdf_input.setText(stored_input_path)
+        self.last_path = stored_input_path
+        self.path_input.setText(stored_output_path)
+        self.last_path2 = stored_output_path
+    
+    def select_file(self):
+        #plugin_path = QFileDialog.getExistingDirectory(self, 'Select the Directory for your Plugin', self.last_path)
+        plugin_path = QFileDialog.getOpenFileName(self, 'Select the File for your AOI', self.last_path)
+        self.path_input.setText(plugin_path[0])
+
+    def select_output(self):
+        plugin_path = QFileDialog.getExistingDirectory(self, 'Select the output directory for your PDFs', self.last_path2)
+        self.pdf_input.setText(plugin_path)
