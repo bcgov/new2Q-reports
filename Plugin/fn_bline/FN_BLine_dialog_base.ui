@@ -98,7 +98,7 @@
      <rect>
       <x>260</x>
       <y>40</y>
-      <width>321</width>
+      <width>251</width>
       <height>20</height>
      </rect>
     </property>
@@ -138,6 +138,19 @@
      <string>Query (optional):</string>
     </property>
    </widget>
+   <widget class="QToolButton" name="btn_select_input">
+    <property name="geometry">
+     <rect>
+      <x>520</x>
+      <y>40</y>
+      <width>51</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Browse</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QGroupBox" name="groupBox">
    <property name="geometry">
@@ -173,8 +186,11 @@
       <height>20</height>
      </rect>
     </property>
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
     <property name="placeholderText">
-     <string/>
+     <string notr="true"/>
     </property>
    </widget>
    <widget class="QLabel" name="host_label">
@@ -229,30 +245,17 @@
      <string/>
     </property>
    </widget>
-   <widget class="QLineEdit" name="password_input">
+   <widget class="QLineEdit" name="username_input">
     <property name="geometry">
      <rect>
       <x>420</x>
-      <y>70</y>
+      <y>30</y>
       <width>151</width>
       <height>20</height>
      </rect>
     </property>
     <property name="placeholderText">
      <string/>
-    </property>
-   </widget>
-   <widget class="QLabel" name="password_label">
-    <property name="geometry">
-     <rect>
-      <x>350</x>
-      <y>70</y>
-      <width>51</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Password:</string>
     </property>
    </widget>
    <widget class="QLabel" name="username_label">
@@ -268,14 +271,30 @@
      <string>Username:</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="username_input">
+   <widget class="QLabel" name="password_label">
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>70</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Password:</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="password_input">
     <property name="geometry">
      <rect>
       <x>420</x>
-      <y>30</y>
+      <y>70</y>
       <width>151</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="echoMode">
+     <enum>QLineEdit::Password</enum>
     </property>
     <property name="placeholderText">
      <string/>
@@ -300,9 +319,22 @@
     <rect>
      <x>110</x>
      <y>290</y>
-     <width>491</width>
+     <width>411</width>
      <height>20</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QToolButton" name="btn_select_output">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>290</y>
+     <width>51</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Browse</string>
    </property>
   </widget>
   <zorder>areaofinterest</zorder>
@@ -310,6 +342,7 @@
   <zorder>groupBox</zorder>
   <zorder>pdf_label</zorder>
   <zorder>pdf_input</zorder>
+  <zorder>btn_select_output</zorder>
  </widget>
  <customwidgets>
   <customwidget>
@@ -318,6 +351,17 @@
    <header>qgsmaplayercombobox.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>vector_input</tabstop>
+  <tabstop>path_input</tabstop>
+  <tabstop>query_input</tabstop>
+  <tabstop>database_input</tabstop>
+  <tabstop>host_input</tabstop>
+  <tabstop>port_input</tabstop>
+  <tabstop>pdf_input</tabstop>
+  <tabstop>username_input</tabstop>
+  <tabstop>password_input</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
