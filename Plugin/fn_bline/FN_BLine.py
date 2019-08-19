@@ -598,6 +598,11 @@ class o2q:
             f[idx] = str(att_value)
             layer.updateFeature( f )
         layer.commitChanges()
+    def delete_field(self, layer, field_name):
+        idx = layer.fields().indexFromName( field_name )
+        if idx != (-1):
+            res = layer.dataProvider().deleteAttributes([idx])
+            layer.updateFields()
 
 class FNBLine:
     """QGIS Plugin Implementation."""
@@ -762,9 +767,9 @@ class FNBLine:
             self.first_start = False
             self.dlg = FNBLineDialog()
         
-        filename = #~~~~~~~~~~~~~INSERT config.ini FILE PATH AND FILE NAME HERE ~~~~~~~~~~~~~~~~~~~~~
-        section = #~~~~~~~~~~~~~INSERT config.ini SECTION NAME HERE ~~~~~~~~~~~~~~~~~~~~~
-        db_config = config(filename, section)
+        con_filename = #~~~~~~~~~~~~~INSERT config.ini FILE PATH AND FILE NAME HERE ~~~~~~~~~~~~~~~~~~~~~
+        con_section = #~~~~~~~~~~~~~INSERT config.ini SECTION NAME HERE ~~~~~~~~~~~~~~~~~~~~~
+        db_config = config(con_filename, con_section)
     
         #set database connection information in plugin gui from congif.ini file
         self.dlg.database_input.setPlaceholderText(db_config['database'])
@@ -781,13 +786,24 @@ class FNBLine:
                 # get parameters
                 iface.mainWindow().blockSignals(True) #turns off CRS dialog box when creating layers
                 aoi = self.dlg.path_input.text()
+                aoi_wc = self.dlg.query_input.text()
                 aoi_name = aoi
                 if aoi == '': #grabs loaded qgs vector layer if no path input is given
                     aoi_name = str(self.dlg.vector_input.currentText())
-                    for layer in iface.mapCanvas().layers():
-                        if layer.name() == aoi_name:
-                            aoi = layer
-                aoi_wc = self.dlg.query_input.text()
+                    for child in QgsProject.instance().layerTreeRoot().children():
+                        if child.layer().name() == aoi_name:
+                            aoi = child.layer()
+                            
+                if isinstance(aoi, QgsVectorLayer) is True:
+                    if aoi.wkbType() == QgsWkbTypes.Point:
+                        raise TypeError('Area of Interest cannot be a point geometry')
+                    if aoi.wkbType() == QgsWkbTypes.LineString:
+                        raise TypeError('Area of Interest cannot be a line geometry')                
+                if isinstance(aoi, QgsVectorLayer) is False:
+                    if isinstance(aoi, QgsRasterLayer) is True:
+                        raise TypeError('Area of Interest cannot be a raster layer')
+                    if aoi == '':
+                        raise NameError('Area of Interest does not exist')
                 
                 database = self.dlg.database_input.text()
                 host = self.dlg.host_input.text()
@@ -806,18 +822,14 @@ class FNBLine:
 
                 pdf_output = self.dlg.pdf_input.text()                
 
-                if aoi not in iface.mapCanvas().layers() and aoi == '': #if path is not give and vector layer in QGIS gui is off, end script
-                    QgsMessageLog.logMessage('Area of Interest was not inputted or visible', 'Messages')
-                    sys.exit(1)
-
                 #test the database connection by building a BCGW vector layer if it fails script breaks
-                test_Oracle_data = #~~~~~~~~~~~~~~~~~~~~~~~~~~INPUT SCHEMA.TABLE HERE~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                test_Oracle_data_geom_col = #~~~~~~~~~~~~~~~~~~~~~~~~~~INPUT MDO.GEOMETRY COLUMN HERE~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                test_Oracle_data_unique_col =  #~~~~~~~~~~~~~~~~~~~~~~~~~~INPUT UNIQUE ID COLUMN HERE~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                test_Oracle_data = 'WHSE_ADMIN_BOUNDARIES.EBC_PROV_ELECTORAL_DIST_SVW'
+                test_Oracle_data_geom_col = 'SHAPE'
+                test_Oracle_data_unique_col = 'OBJECTID'
                 schema,table = test_Oracle_data.split('.')
                 uri = QgsDataSourceUri()
                 uri.setConnection(host, port, database, user, password)
-                uri.setDataSource(schema, table, test_Oracle_data_geom_col)           
+                uri.setDataSource(schema, table, test_Oracle_data_geom_col)             
                 uri.setKeyColumn(test_Oracle_data_unique_col)
                 test_connection = QgsVectorLayer(uri.uri(), "LAYER_NAME", 'oracle')
                 if test_connection.isValid() is False:
@@ -933,6 +945,7 @@ class FNBLine:
                     if result.crs().authid() != 'EPSG:3005':
                         result = test.reproject(result, layer_title)
                     result.setCrs(QgsCoordinateReferenceSystem(3005),True)
+                    test.delete_field(result, 'SE_ANNO_CAD_DATA')
                     # Create the htmls for each groupping and prep for map by making layer list for each group
                     group_name = 'g{}'.format(layer_group)
                     count = result.featureCount()
@@ -993,9 +1006,22 @@ class FNBLine:
 
                 iface.mainWindow().blockSignals(False)
                 iface.messageBar().pushMessage("Complete", 'View more to see where PDFs are located', pdf_output, level=3, duration=30)
-            except:
-                iface.messageBar().pushMessage('Error', 'Script Failed_ check python for more', level=2, duration = 5)
+            except Exception as e:
+                print(e)
+                iface.messageBar().pushMessage('Error', str(e), level=2, duration = 5)
+                iface.mainWindow().blockSignals(False)
                 if 'dif' in locals():
                     QgsProject.instance().removeMapLayers([dif.id()])
-                iface.mainWindow().blockSignals(False)
-
+                if 'group_dic' in locals():
+                    vlayer_list = []
+                    for item in group_dic:
+                        for i in group_dic[item]:
+                            if i not in vlayer_list:
+                                vlayer_list.append(i)
+                                QgsMessageLog.logMessage(i.name(), 'Messages')            
+                    for features in vlayer_list:
+                        QgsProject.instance().removeMapLayers([features.id()])
+                for child in QgsProject.instance().layerTreeRoot().children():
+                    r = child.layer()
+                    if isinstance(r, QgsRasterLayer) is True:
+                        QgsProject.instance().removeMapLayers([r.id()])
