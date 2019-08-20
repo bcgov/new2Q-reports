@@ -62,7 +62,6 @@ def config(filename, section):
             'Section {0} not found in the {1} file'.format(section, filename))
     return db
 
-
 def external_intersetion(location, layer_table, name, overlay, o2q_obj):
     layer_path = r'{}'.format(location) + '|layername=' + layer_table
     result = o2q_obj.clipper(layer_path, overlay, name, selection=True)
@@ -166,14 +165,16 @@ class pdf_maker_QGIS:
             table_html = '<!DOCTYPE html><html><head><style>h2{line-height:0px }table {border: 2.5px solid black;table-layout: fixed; width:100%;}th, td {padding: 5px; word-wrap: break-word; border: 1px solid black;}</style></head><body><h2>Intersecting Features</h2><table><tr><th>Feature Name</th><th>Area Sq.Metres</th><th>Length Metres</th><th>Count</th></tr>      </table></body></html>'
         text1,text2 = table_html.split('      ')
         row ='<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(self.layer_title, area, length, self.count)
+        self.text_table[self.layer_title] = [area, length, self.count]
         table_html = text1 + row + '      ' + text2
         return table_html
-    def html_combiner(self, html_dic, html_counter, sum_type, sum_num, gkey, layer_title, count):
+    def html_combiner(self, html_dic, html_counter, sum_type, sum_num, gkey, layer_title, count, text_table):
         self.sum_type = sum_type
         self.sum_num = sum_num
         self.group_key = 'g' + str(gkey)
         self.layer_title  = layer_title
         self.count = count
+        self.text_table = text_table
         rpp = 15 #rows per page
         pg_num = int(list(html_dic[self.group_key].keys())[-1].strip('pg'))
         pg_key = 'pg{}'.format(pg_num)
@@ -199,6 +200,7 @@ class pdf_maker_QGIS:
         self.lmg.clear()
         page = self.l.pageCollection().pages()[0]
         page.setPageSize(QgsLayoutSize(self.width, self.height))
+        #self.l.pageCollection().resizeToContents(QgsMargins().fromString('10') , QgsUnitTypes.LayoutMillimeters)
         self.__map(AOI)
         self.__title()
         self.__subtitle(AOI)
@@ -295,6 +297,10 @@ class pdf_maker_QGIS:
         legend.setSymbolWidth(3.5)
         legend.setPos(self.left_m , 212)
         legend.setBoxSpace(0)
+        # legend.setSplitLayer(True)
+        # legend.setWrapString(' ')
+        # pgcnt = len(self.l.pageCollection().pages()) - 1
+        # legend.setPos(self.left_m , self.height*pgcnt + self.top_m )
         self.l.addItem(legend)
     def __table(self,html_table):
         if isinstance(html_table,dict) is True:
@@ -604,6 +610,7 @@ class o2q:
             res = layer.dataProvider().deleteAttributes([idx])
             layer.updateFields()
 
+
 class FNBLine:
     """QGIS Plugin Implementation."""
 
@@ -735,10 +742,10 @@ class FNBLine:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
  
-        icon_path = ':/plugins/FN_BLine/icon.png'
+        icon_path = ':/plugins/FN_BLine/icon.png' #must reload resource file if icon is changed using OSGeo4WShell
         self.add_action(
             icon_path,
-            text=self.tr(u''),
+            text=self.tr(u'New2Q-Reports'),
             callback=self.run,
             parent=self.iface.mainWindow())
 
@@ -767,6 +774,7 @@ class FNBLine:
             self.first_start = False
             self.dlg = FNBLineDialog()
         
+
         con_filename = #~~~~~~~~~~~~~INSERT config.ini FILE PATH AND FILE NAME HERE ~~~~~~~~~~~~~~~~~~~~~
         con_section = #~~~~~~~~~~~~~INSERT config.ini SECTION NAME HERE ~~~~~~~~~~~~~~~~~~~~~
         db_config = config(con_filename, con_section)
@@ -794,17 +802,17 @@ class FNBLine:
                         if child.layer().name() == aoi_name:
                             aoi = child.layer()
                             
-                if isinstance(aoi, QgsVectorLayer) is True:
+                if isinstance(aoi, QgsVectorLayer) is True: # Ends process if AOI is a point or line
                     if aoi.wkbType() == QgsWkbTypes.Point:
                         raise TypeError('Area of Interest cannot be a point geometry')
                     if aoi.wkbType() == QgsWkbTypes.LineString:
                         raise TypeError('Area of Interest cannot be a line geometry')                
-                if isinstance(aoi, QgsVectorLayer) is False:
+                if isinstance(aoi, QgsVectorLayer) is False:# Ends process if AOI is raster or is non existent 
                     if isinstance(aoi, QgsRasterLayer) is True:
                         raise TypeError('Area of Interest cannot be a raster layer')
                     if aoi == '':
                         raise NameError('Area of Interest does not exist')
-                
+
                 database = self.dlg.database_input.text()
                 host = self.dlg.host_input.text()
                 port = self.dlg.port_input.text()
@@ -821,6 +829,15 @@ class FNBLine:
                 port = input_list['port']
 
                 pdf_output = self.dlg.pdf_input.text()                
+                if pdf_output == '':
+                    try:
+                        username = os.getenv('username')
+                        pdf_output = os.path.join(r'C:\Users\{}\AppData\Local\Temp'.format(username), aoi_name)
+                        os.mkdir(pdf_output)
+                    except:
+                        pdf_output = r'C:\Users\{}\AppData\Local\Temp\PDF_Output'.format(username)
+                        if not os.path.exists:
+                            os.mkdir(pdf_output)
 
                 #test the database connection by building a BCGW vector layer if it fails script breaks
                 test_Oracle_data = 'WHSE_ADMIN_BOUNDARIES.EBC_PROV_ELECTORAL_DIST_SVW'
@@ -844,7 +861,11 @@ class FNBLine:
 
                 #build aoi
                 source, aoi_base = test.format_checker(aoi, aoi_wc)
-                            
+                symbol = QgsFillSymbol.createSimple({'line_style': 'solid', 'color': '255,0,0,0', 'color_border':'#ff0000', 'width_border':'1'})
+                aoi_base.renderer().setSymbol(symbol)
+                aoi_base.triggerRepaint()
+                iface.layerTreeView().refreshLayerSymbology(aoi_base.id())
+
                 #create buffer for arch sites 50m outside of aoi
                 buf = test.buffer(aoi_base, 50)
                 dif = test.difference(buf, aoi_base)
@@ -871,12 +892,13 @@ class FNBLine:
                     obj_list.append(globals()['makepdf_gr%s' % group])
 
                 #add aoi to html table by adding field
+                text_table = {}
                 count = aoi_base.featureCount()
                 test.add_field(aoi_base, 'layer', 'String', att_value=aoi_base.name())
                 sum_type, sum_num = summation(aoi_base, aoi_base.name(), special = 'aoi')
                 for item in obj_list:
                     group_key = [k for k, v in globals().items() if v is item][0][-1]
-                    (item).html_combiner(html_dic, html_counter, sum_type, sum_num, group_key, ('AOI: ' + aoi_base.name()), count)
+                    (item).html_combiner(html_dic, html_counter, sum_type, sum_num, group_key, ('AOI: ' + aoi_base.name()), count, text_table)
                 html_counter += 1
 
                 #BEGIN INTERSECTIONS
@@ -911,8 +933,8 @@ class FNBLine:
                                         result = test.clipper(selectedfixed_features, aoi_base, layer_title, selection=True)
                                     feature_layer_lst.append(result)
                             else:
-                                result = external_intersetion(location, layer_table, layer_title, aoi_base, test)                            
-                                feature_layer_lst.append(result)                            
+                                result = external_intersetion(location, layer_table, layer_title, aoi_base, test)
+                                feature_layer_lst.append(result)
                             aoi_base.removeSelection()
                         result = test.merger(feature_layer_lst, layer_title)
                     elif source == 'internal':
@@ -957,7 +979,7 @@ class FNBLine:
                     if count != 0:
                         if layer_expansion != '':
                             sum_type, sum_num = summation(result, layer_title)
-                            (item).html_combiner(html_dic, html_counter, sum_type, sum_num, layer_group, layer_title, count)
+                            (item).html_combiner(html_dic, html_counter, sum_type, sum_num, layer_group, layer_title, count, text_table)
                             html_counter += 1
                             group_dic[group_name].append(result)
                             dic, ls = summation(result, layer_title, field=layer_expansion, special=True)
@@ -969,20 +991,23 @@ class FNBLine:
                                 for word in obj.split(' '):
                                     acronym = acronym + word[0]
                                 layer_tbl_title = '{}: '.format(acronym.upper()) + str(feature)
-                                (item).html_combiner(html_dic, html_counter, sum_type, sum_num, layer_group, layer_tbl_title, count)
+                                (item).html_combiner(html_dic, html_counter, sum_type, sum_num, layer_group, layer_tbl_title, count, text_table)
                                 html_counter += 1
-                        else:    
+                        else:
                             sum_type, sum_num = summation(result, layer_title)
-                            (item).html_combiner(html_dic, html_counter, sum_type, sum_num, layer_group, layer_title, count)
+                            (item).html_combiner(html_dic, html_counter, sum_type, sum_num, layer_group, layer_title, count, text_table)
                             html_counter += 1
                             group_dic[group_name].append(result)
                         QgsProject.instance().addMapLayer(result)
+                        result.renderer().symbol().setOpacity(0.30)
+                        result.triggerRepaint()
+                        iface.layerTreeView().refreshLayerSymbology(result.id())
 
                 #remove unwanter layers
                 QgsProject.instance().removeMapLayers([dif.id()])
 
                 #QgsMessageLog.logMessage('building PDFS...', 'Messages')
-                iface.messageBar().pushMessage("Status", '  DONT TOUCH MAP! Building PDFS, please wait...', level=1, duration=5)
+                iface.messageBar().pushMessage("Status", '   building PDFS, please wait...', level=1, duration=5)
 
                 #export all pdfs
                 for group_key in group_list:
@@ -1002,16 +1027,26 @@ class FNBLine:
                 canvas.setExtent(exnt)
                 iface.mapCanvas().refresh()
                 
+                # create text delineated table for show more section
+                tab = "{}\n\n".format(pdf_output)
+                for k, v in text_table.items():
+                    area, length, count = v
+                    tab = tab + k + ':       ' + '    area = ' + str(area) + '        length = ' + str(length ) + '        feature count = ' + str(count) + '\n'
+                    tab = tab + '-'*len(k + ':       ' + '    area = ' + str(area) + '        length = ' + str(length ) + '        feature count = ' + str(count) + '\n') + '\n'
+ 
+
+
                 QgsMessageLog.logMessage('Script comeplete', 'Messages')
 
                 iface.mainWindow().blockSignals(False)
-                iface.messageBar().pushMessage("Complete", 'View more to see where PDFs are located', pdf_output, level=3, duration=30)
+                iface.messageBar().pushMessage("Complete", 'View more to see where PDFs are located', tab, level=3, duration=30)
             except Exception as e:
                 print(e)
                 iface.messageBar().pushMessage('Error', str(e), level=2, duration = 5)
                 iface.mainWindow().blockSignals(False)
                 if 'dif' in locals():
-                    QgsProject.instance().removeMapLayers([dif.id()])
+                    if len(QgsProject.instance().mapLayersByName('50m Buffer')) != 0:
+                        QgsProject.instance().removeMapLayers([dif.id()])
                 if 'group_dic' in locals():
                     vlayer_list = []
                     for item in group_dic:
@@ -1025,3 +1060,4 @@ class FNBLine:
                     r = child.layer()
                     if isinstance(r, QgsRasterLayer) is True:
                         QgsProject.instance().removeMapLayers([r.id()])
+
