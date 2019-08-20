@@ -1,4 +1,5 @@
 import os
+import configparser
 
 def script_updated(logo, url, cf, cs, csv):
     #updates plugin script 
@@ -18,10 +19,22 @@ def script_updated(logo, url, cf, cs, csv):
     with open(pyscript,'w') as py:
         py.writelines(file_list)
 
+def plugin_checkon(qg_config)
+    #Turn on plugin for QGIS polugin manager files (config file)
+    config = configparser.ConfigParser()
+    config.read(qg_config)
+    config.sections()
+    config.set('PythonPlugins', 'fn_bline', 'true')
+    with open(qg_config, 'w') as configfile:
+        config.write(configfile)
+
 if __name__ == "__main__":
 #SET THESE VARIABLE:
+    #QGIS ini file location     ex:   os.path.join(os.getenv('appdata'), r'QGIS\QGIS3\profiles\default\QGIS\QGIS3.ini')
+    qg_config = r""
+    
     #script location variable:
-    directory = r"" #directory path to plugin script 
+    directory = r"" #directory path to plugin script      ex:   os.path.join(os.getenv('appdata'), r'QGIS\QGIS3\profiles\default\python\plugins\fn_bline')
     pyscript = os.path.join(directory,'FN_BLine.py')
 
     #script variables:
