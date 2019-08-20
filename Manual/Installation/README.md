@@ -13,10 +13,3 @@
 1. Open Post_Installation.py in a python editing window
 2. Change the required variables
 3. Run script
-
-## Turn on plugin in QGIS
-1. Open QGIS
-2. Go to Plugin Manager
-   * Plugin > Manager and Install Plugins
-3. Turn on PLugin FNBLine 
-4. Close Plugin Manager
