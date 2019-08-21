@@ -26,9 +26,10 @@ from qgis.core import *
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import (QAction, QFileDialog)
+from qgis.PyQt.QtWidgets import (QAction, QFileDialog, QProgressBar)
 from qgis.gui import QgsMessageBar
 from qgis.utils import iface
+from qgis.PyQt.QtSql import QSqlDatabase, QSqlQuery  
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -46,6 +47,7 @@ import re
 from configparser import ConfigParser
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+
 
 def config(filename, section):
     # create a parser
@@ -135,8 +137,6 @@ def summation(layer, name, field='layer', special=False):
         return (int(area), int(length))
     else:
         return (dic, dic_ls)
-
-
 
 class pdf_maker_QGIS:
     def __init__(self):
@@ -408,38 +408,24 @@ class o2q:
     def __anyinteract(self, data1, data2, data1wc, data2wc):
         data1wc = self.__whereclauses(data1wc, '1')
         data2wc = self.__whereclauses(data2wc, 'aoi')
-        if data1 in ['WHSE_ARCHAEOLOGY.RAAD_TFM_SITES_SVW', 'WHSE_ARCHAEOLOGY.RAAD_AOA_PROVINCIAL','WHSE_TERRESTRIAL_ECOLOGY.BIOT_OCCR_MASKED_SENS_PRIV_SP', 'WHSE_WILDLIFE_MANAGEMENT.WCP_CRITICAL_HABITAT_SECURE_SP']:
-            if data1 in ['WHSE_TERRESTRIAL_ECOLOGY.BIOT_OCCR_MASKED_SENS_PRIV_SP',  'WHSE_ARCHAEOLOGY.RAAD_AOA_PROVINCIAL']:
-                sql = "(select * from {0}  where {4} sdo_ANYINTERACT({2},  (select {3}  from {1} {5})) = 'TRUE')".format(data1, data2, 'GEOMETRY' , self.__get_geomcolumn(data2), data1wc, data2wc)
-            else:
-                sql = "(select * from {0}  where {4} sdo_ANYINTERACT({2},  (select {3}  from {1} {5})) = 'TRUE')".format(data1, data2, 'SHAPE' , self.__get_geomcolumn(data2), data1wc, data2wc)
-        else:
-            sql = "(select * from {0}  where {4} sdo_ANYINTERACT({2},  (select {3}  from {1} {5})) = 'TRUE')".format(data1, data2, self.__get_geomcolumn(data1) , self.__get_geomcolumn(data2), data1wc, data2wc)
-            #sql = "(select b.* from {0} b, {1} aoi where  {4}  {5}  SDO_RELATE(b.{2}, aoi.{3}, 'mask=anyinteract querytype=window') = 'TRUE')".format(data1, data2, self.__get_geomcolumn(data1) , self.__get_geomcolumn(data2), data1wc, data2wc)
+        sql = "(select * from {0}  where {4} sdo_ANYINTERACT({2},  (select {3}  from {1} {5})) = 'TRUE')".format(data1, data2, self.__get_geomcolumn(data1) , self.__get_geomcolumn(data2), data1wc, data2wc)
         return self.__build_layer(data1, sql)
     # RECT_ANYINTERACT METHOD: method defines an aoi by a given extent and returns a QGIS vector layer of intersecting table
     # INPUTS:   data1 = feature being selected (schema.table)
     #           feat = single feature that an extent string will be generated from
-    def Rect_anyinteract(self, data1, feat, name):
+    def Rect_anyinteract(self, data1, feat, name, data1wc):
+        data1wc = self.__whereclauses(data1wc, '1')
         self.layer_title = name
         exnt_str = self.extent_rectangle(feat)
-        if data1 in ['WHSE_ARCHAEOLOGY.RAAD_TFM_SITES_SVW', 'WHSE_ARCHAEOLOGY.RAAD_AOA_PROVINCIAL', 'WHSE_TERRESTRIAL_ECOLOGY.BIOT_OCCR_MASKED_SENS_PRIV_SP', 'WHSE_WILDLIFE_MANAGEMENT.WCP_CRITICAL_HABITAT_SECURE_SP']:
-            if data1 in ['WHSE_TERRESTRIAL_ECOLOGY.BIOT_OCCR_MASKED_SENS_PRIV_SP', 'WHSE_ARCHAEOLOGY.RAAD_AOA_PROVINCIAL']:
-                sql = "(select * from {} where sdo_ANYINTERACT ({}, SDO_GEOMETRY(2003, 3005, NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY({}))) = 'TRUE')".format(data1, 'GEOMETRY', exnt_str)
-            else:
-                sql = "(select * from {} where sdo_ANYINTERACT ({}, SDO_GEOMETRY(2003, 3005, NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY({}))) = 'TRUE')".format(data1, 'SHAPE', exnt_str)
-        else:
-            sql = "(select * from {} where sdo_ANYINTERACT ({}, SDO_GEOMETRY(2003, 3005, NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY({}))) = 'TRUE')".format(data1, self.__get_geomcolumn(data1), exnt_str)
+        sql = "(select * from {} where {} sdo_ANYINTERACT ({}, SDO_GEOMETRY(2003, 3005, NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY({}))) = 'TRUE')".format(data1, data1wc, self.__get_geomcolumn(data1), exnt_str)
         return self.__build_layer(data1, sql)
     # __WHERECLAUSES METHOD: internal method that returns a transformed whereclauses
     # INPUTS:   datawc = sql statment ie fieldname = 'value'
     def __whereclauses(self, datawc, placement):
         if datawc != '' and placement == '1':
             datawc = datawc + ' and '
-            #for SDO.RELATE: datawc = ' b.' + datawc + ' and '
         if datawc != '' and placement == 'aoi':
             datawc = ' where ' + datawc
-            #for SDO.RELATE: datawc = ' aoi.' + datawc + ' and '
         return datawc
     # __BUILD_LAYER METHOD: internal method that returns a built QGIS vector layer
     #                       NOTE: Method assumes paramaters based on BCGW datasets
@@ -452,28 +438,62 @@ class o2q:
         uri.setSrid('3005')
         uri.setUseEstimatedMetadata(True)
         uri.setKeyColumn('OBJECTID')
-        if data1 in ['WHSE_ARCHAEOLOGY.RAAD_TFM_SITES_SVW', 'WHSE_ARCHAEOLOGY.RAAD_AOA_PROVINCIAL', 'WHSE_TERRESTRIAL_ECOLOGY.BIOT_OCCR_MASKED_SENS_PRIV_SP', 'WHSE_WILDLIFE_MANAGEMENT.WCP_CRITICAL_HABITAT_SECURE_SP']:
-            if data1 in ['WHSE_TERRESTRIAL_ECOLOGY.BIOT_OCCR_MASKED_SENS_PRIV_SP', 'WHSE_ARCHAEOLOGY.RAAD_AOA_PROVINCIAL']:
-                uri.setDataSource( "", sql, 'GEOMETRY', "", "OBJECTID")
-                uri.setWkbType(QgsWkbTypes.Polygon)
-            else:
-                uri.setDataSource( "", sql, 'SHAPE', "", "OBJECTID")
-                uri.setWkbType(QgsWkbTypes.Polygon)
-        else:
-            uri.setDataSource( "", sql, self.__get_geomcolumn(data1), "", "OBJECTID")
-            uri.setWkbType(int('{}'.format(getattr(QgsWkbTypes, self.__get_geomtype(data1)))))
+        uri.setDataSource( "", sql, self.__get_geomcolumn(data1), "", "OBJECTID")
+        uri.setWkbType(int('{}'.format(getattr(QgsWkbTypes, self.__get_geomtype(data1)))))
         n_layer = QgsVectorLayer(uri.uri(), self.layer_title, 'oracle')
         n_layer.setCrs(QgsCoordinateReferenceSystem(3005),True)
         return n_layer
     # __GET_GEOMTYPE METHOD: internal method that determines the geometry type of a dataset ie Polygon, Point, LineString
         # INPUTS:   data = schema.table
     def __get_geomtype(self, data):
-        self.geom_t = self.d[data]['Type']
+        try:
+            geom_t = self.d[data]['Type']
+        except:
+            geom = self.__get_geomcolumn(data)
+            owner,table = data.split('.') 
+            driver ="QOCISPATIAL" 
+            db = QSqlDatabase.addDatabase(driver) 
+            db.setDatabaseName(self.host + "/" + self.db) 
+            db.setUserName(self.user) 
+            db.setPassword(self.password) 
+            db.open()
+            if not db.open(): 
+                print ("Failed Connection from find_bcgw_the_geom") 
+            q = QSqlQuery(db) 
+            query = "SELECT t.{}.GET_GTYPE() AS geometry_type from {}.{} t".format(geom, owner, table)  
+            q.exec(query) 
+            q.first()
+            type_num = q.value(0)
+            if type_num in [2,6]:
+                geom_t = 'LineString'
+            if type_num in [1,5]:
+                geom_t = 'Point'
+            if type_num in [3,7]:
+                geom_t = 'Polygon'
+            if type_num in [0,4]:
+                raise TypeError
+        self.geom_t = geom_t
         return self.geom_t
     # __GET_GEOMCOLUMN METHOD: internal method that determines the geometry column of a dataset ie SHAPE, GEOMETRY
         # INPUTS:   data = schema.table
     def __get_geomcolumn(self, data):
-        self.geom_c = self.d[data]['Geometry']
+        try:
+            self.geom_c = self.d[data]['Geometry']
+        except: 
+            owner,table = data.split('.') 
+            driver ="QOCISPATIAL" 
+            db = QSqlDatabase.addDatabase(driver) 
+            db.setDatabaseName(self.host + "/" + self.db) 
+            db.setUserName(self.user) 
+            db.setPassword(self.password) 
+            db.open()
+            if not db.open(): 
+                print ("Failed Connection from find_bcgw_the_geom") 
+            q = QSqlQuery(db) 
+            query ="SELECT COLUMN_NAME from all_tab_columns where OWNER = '{}' AND TABLE_NAME = '{}' AND DATA_TYPE = 'SDO_GEOMETRY'".format(owner,table)  
+            q.exec(query) 
+            q.first() 
+            self.geom_c = q.value(0)
         return self.geom_c
     # __GET_LAYERNM METHOD: internal method that determines an appropriate vector layer name
         # INPUTS:   data = schema.table
@@ -609,7 +629,6 @@ class o2q:
         if idx != (-1):
             res = layer.dataProvider().deleteAttributes([idx])
             layer.updateFields()
-
 
 class FNBLine:
     """QGIS Plugin Implementation."""
@@ -791,6 +810,13 @@ class FNBLine:
         # See if OK was pressed
         if result:
             try:
+                progressMessageBar = iface.messageBar().createMessage("If software appears frozen, do not touch -tool is still working!              Progress Status:")
+                progress = QProgressBar()
+                progress.setMaximum(20)
+                progress.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+                progressMessageBar.layout().addWidget(progress)
+                iface.messageBar().pushWidget(progressMessageBar, level=0)
+                
                 # get parameters
                 iface.mainWindow().blockSignals(True) #turns off CRS dialog box when creating layers
                 aoi = self.dlg.path_input.text()
@@ -819,6 +845,8 @@ class FNBLine:
                 user = self.dlg.username_input.text()
                 password = self.dlg.password_input.text()
                 
+                progress.setValue(1)
+                
                 #check the database connection and if there is no input by user, default to config.ini file
                 input_list= {'database':database, 'host': host, 'port': port}
                 for item in input_list:
@@ -833,10 +861,13 @@ class FNBLine:
                     try:
                         username = os.getenv('username')
                         pdf_output = os.path.join(r'C:\Users\{}\AppData\Local\Temp'.format(username), aoi_name)
-                        os.mkdir(pdf_output)
+                        if not os.path.exists(pdf_output):
+                            os.mkdir(pdf_output)
+                        else:
+                            raise NameError("output name already exists")
                     except:
                         pdf_output = r'C:\Users\{}\AppData\Local\Temp\PDF_Output'.format(username)
-                        if not os.path.exists:
+                        if not os.path.exists(pdf_output):
                             os.mkdir(pdf_output)
 
                 #test the database connection by building a BCGW vector layer if it fails script breaks
@@ -855,6 +886,8 @@ class FNBLine:
 
                 #create o2q object 
                 test = o2q(database, host, user, port, password)
+                
+                progress.setValue(2)
 
                 #change project coordinate system to bc albers
                 QgsProject.instance().setCrs(QgsCoordinateReferenceSystem(3005))
@@ -869,6 +902,8 @@ class FNBLine:
                 #create buffer for arch sites 50m outside of aoi
                 buf = test.buffer(aoi_base, 50)
                 dif = test.difference(buf, aoi_base)
+
+                progress.setValue(3)
 
                 # creates dictionary of all fc to compare aoi too
                 csv_path #~~~~~~~~~~~~~~~~~~~~~~~INSERT CSV PATH HERE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -901,12 +936,15 @@ class FNBLine:
                     (item).html_combiner(html_dic, html_counter, sum_type, sum_num, group_key, ('AOI: ' + aoi_base.name()), count, text_table)
                 html_counter += 1
 
+                progress.setValue(4)
+
                 #BEGIN INTERSECTIONS
-                QgsMessageLog.logMessage('Beginning layer intersection with AOI', 'Messages')
-                
                 #intersect AOI with layers of interest and produce a breakdown table that will be added to the pdf
                 sorted_fc_dic = sorted(fc_dic, key=lambda x: (fc_dic[x]['Grouping']))
-                for obj in sorted_fc_dic:
+                progress_count = len(sorted_fc_dic)
+                i = (10 / progress_count)
+                value_setter = 4
+                for obj in sorted_fc_dic:               
                     dic = (fc_dic[obj])
                     layer_title = (obj)
                     layer_table = dic['Feature_Name']
@@ -921,11 +959,11 @@ class FNBLine:
                             aoi_base.select(item.id())
                             if location == 'BCGW':
                                 if layer_title == 'Archeological sites within 50m':
-                                    selected_features = test.Rect_anyinteract(layer_table, item, layer_title)
+                                    selected_features = test.Rect_anyinteract(layer_table, item, layer_title, layer_sql)
                                     result = test.clipper(selected_features, dif, layer_title, selection=True)
                                     feature_layer_lst.append(result)
                                 else:
-                                    selected_features = test.Rect_anyinteract(layer_table, item, layer_title)
+                                    selected_features = test.Rect_anyinteract(layer_table, item, layer_title, layer_sql)
                                     try:
                                         result = test.clipper(selected_features, aoi_base, layer_title, selection=True)
                                     except:
@@ -999,17 +1037,19 @@ class FNBLine:
                             html_counter += 1
                             group_dic[group_name].append(result)
                         QgsProject.instance().addMapLayer(result)
-                        result.renderer().symbol().setOpacity(0.30)
+                        result.renderer().symbol().setOpacity(0.70)
                         result.triggerRepaint()
                         iface.layerTreeView().refreshLayerSymbology(result.id())
+                    value_setter += i
+                    progress.setValue(value_setter)
 
                 #remove unwanter layers
                 QgsProject.instance().removeMapLayers([dif.id()])
 
-                #QgsMessageLog.logMessage('building PDFS...', 'Messages')
-                iface.messageBar().pushMessage("Status", '   building PDFS, please wait...', level=1, duration=5)
-
                 #export all pdfs
+                progress_count = len(group_list)
+                i = (5 / progress_count)
+                value_setter = 14
                 for group_key in group_list:
                     #group_key = [k for k, v in globals().items() if v is item][0][-1]
                     group_name = 'g{}'.format(group_key)
@@ -1018,6 +1058,8 @@ class FNBLine:
                         on, off = choose_vis(group_key, group_dic )
                         list_on = test.layer_visibility(on, off)
                         (item).pdf_creation(aoi_base, pdf_name, html_dic[group_name], pdf_output)
+                    value_setter += i
+                    progress.setValue(value_setter)
 
                 # zoome to extent of aoi 
                 vLayer = iface.setActiveLayer(group_dic[group_name][0])
@@ -1033,8 +1075,9 @@ class FNBLine:
                     area, length, count = v
                     tab = tab + k + ':       ' + '    area = ' + str(area) + '        length = ' + str(length ) + '        feature count = ' + str(count) + '\n'
                     tab = tab + '-'*len(k + ':       ' + '    area = ' + str(area) + '        length = ' + str(length ) + '        feature count = ' + str(count) + '\n') + '\n'
- 
 
+                progress.setValue(20)
+                iface.messageBar().clearWidgets()
 
                 QgsMessageLog.logMessage('Script comeplete', 'Messages')
 
