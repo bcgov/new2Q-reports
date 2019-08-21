@@ -1,6 +1,6 @@
 # New2Q-Reports
 QGIS based reporting plugin
-* For installation instructions refer to this [Manual](https://github.com/bcgov/new2Q-reports/tree/master/Manual/Installation)
+* For installation instructions refer to these [Instructions](https://github.com/bcgov/new2Q-reports/tree/master/Manual/Installation)
 * To learn how to use this plugin please refer to the [Manual]( https://github.com/bcgov/new2Q-reports/tree/master/Manual)
 
 ## About
