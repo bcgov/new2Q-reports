@@ -96,6 +96,13 @@ def build_extent(layer):
         exnt = QgsRectangle(ext[0], ext[1], ext[2], ext[3])
         return exnt
 
+def null_checker(self, attr):
+    if not isinstance(attr, str):
+        if not isinstance(attr, int):
+            return "NULL"
+    else:
+        return attr
+
 def summation(layer, name, field='layer', special=False):   
     dic = {} 
     dic_ls = []
@@ -104,16 +111,16 @@ def summation(layer, name, field='layer', special=False):
         if ',' in field:
             field_edit = re.sub(' +', '', field)
             field_edit = field_edit.split(',')
-            field_name = feat.attribute(field_edit[0])
+            field_name = null_checker(feat.attribute(field_edit[0]))
         else:
-            field_name = feat.attribute(field)
+            field_name = null_checker(feat.attribute(field))
             dic_ls.append(field_name) # builds a list so that a count can happen for each unique attribute
         if ',' in field:
             rec_count = 0
             for rec in field_edit:
                 if rec_count != 0:
                     if feat.attribute(field_edit[rec_count]) != ' ':
-                        field_name = field_name + ' and ' + feat.attribute(field_edit[rec_count])
+                        field_name = field_name + ' and ' + null_checker(feat.attribute(field_edit[rec_count]))
                 rec_count += 1
             dic_ls.append(field_name)
         if field_name not in dic: # adds field attribute to dictionary if it doesnt exist yet as well as the features area/length
