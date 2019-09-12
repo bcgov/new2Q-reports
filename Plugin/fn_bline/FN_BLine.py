@@ -96,7 +96,7 @@ def build_extent(layer):
         exnt = QgsRectangle(ext[0], ext[1], ext[2], ext[3])
         return exnt
 
-def null_checker(self, attr):
+def null_checker(attr):
     if not isinstance(attr, str):
         if not isinstance(attr, int):
             return "NULL"
