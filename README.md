@@ -1,4 +1,7 @@
 # New2Q-Reports
+[![img](https://img.shields.io/badge/Lifecycle-Maturing-007EC6)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
+
+
 QGIS based reporting plugin
 * For installation instructions refer to these [Instructions](https://github.com/bcgov/new2Q-reports/tree/master/Manual/Installation)
 * To learn how to use this plugin please refer to the [Manual]( https://github.com/bcgov/new2Q-reports/tree/master/Manual)
