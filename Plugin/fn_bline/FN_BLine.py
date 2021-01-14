@@ -448,7 +448,7 @@ class o2q:
         uri.setDataSource( "", sql, self.__get_geomcolumn(data1), "", "OBJECTID")
         uri.setWkbType(int('{}'.format(getattr(QgsWkbTypes, self.__get_geomtype(data1)))))
         n_layer = QgsVectorLayer(uri.uri(), self.layer_title, 'oracle')
-        n_layer.setCrs(QgsCoordinateReferenceSystem(3005),True)
+        n_layer.setCrs(QgsCoordinateReferenceSystem('EPSG:3005'),True)
         return n_layer
     # __GET_GEOMTYPE METHOD: internal method that determines the geometry type of a dataset ie Polygon, Point, LineString
         # INPUTS:   data = schema.table
@@ -525,19 +525,19 @@ class o2q:
         #           selection = when false, clipping will happen between 2 unselected layers. When true, overlay must have selection for clip to work
     def clipper(self, layer1, layer2, name, selection=False):
         c_layer = (processing.run("native:clip", {'INPUT':layer1, 'OVERLAY': QgsProcessingFeatureSourceDefinition(layer2.name(), selection), 'OUTPUT':'memory:{}'.format(name)})).get('OUTPUT')
-        c_layer.setCrs(QgsCoordinateReferenceSystem(3005),True)
+        c_layer.setCrs(QgsCoordinateReferenceSystem('EPSG:3005'),True)
         return c_layer
     # __FIX_GEOMETRY METHOD: a qgis vector overlay process which returns a clipped QGIS Vector layer
         # INPUTS:   layer1 = a vector layer being fixed
     def fix_geom(self, layer1, name):
         fg_layer = (processing.run("native:fixgeometries", {'INPUT':layer1,'OUTPUT':'memory:{}'.format(name)})).get('OUTPUT')
-        fg_layer.setCrs(QgsCoordinateReferenceSystem(3005),True)
+        fg_layer.setCrs(QgsCoordinateReferenceSystem('EPSG:3005'),True)
         return fg_layer
     # MERGER METHOD: a qgis vector data management process which returns a compilation of QGIS Vector layers as a single vector layer
         # INPUTS:   list_of_layers = a list of vector layers that will be merged together
     def merger(self, list_of_layers, name, crs='EPSG:3005'):
         m_layer = (processing.run("native:mergevectorlayers", {'LAYERS':list_of_layers, 'CRS':QgsCoordinateReferenceSystem(crs),'OUTPUT':'memory:{}'.format(name)})).get('OUTPUT')
-        m_layer.setCrs(QgsCoordinateReferenceSystem(3005),True)
+        m_layer.setCrs(QgsCoordinateReferenceSystem('EPSG:3005'),True)
         return m_layer
     # __LISTFIELDS METHOD: internal method that returns a list of all the fields in a layer except for 'SE_ANNO_CAD_DATA'
         # INPUTS:   oracle_source = can either be a QGIS vector layer or a schema.table from BCGW
@@ -599,7 +599,7 @@ class o2q:
             self.layer_title = self.get_layernm(input_file) + ' where ' + whcls.strip("'")
             vlayer = self.select_by_attribute(input_file, whcls)
             vlayer = self.fix_geom(vlayer, self.layer_title)
-            vlayer.setCrs(QgsCoordinateReferenceSystem(3005),True)
+            vlayer.setCrs(QgsCoordinateReferenceSystem('EPSG:3005'),True)
             self.project.addMapLayer(vlayer)
             return ('internal', vlayer)
     # LAYER_VISIBLITY METHOD: Turns on and off layers in a QGIS layer tree so that only specific layers can be mapped/exported
@@ -897,7 +897,7 @@ class FNBLine:
                 progress.setValue(2)
 
                 #change project coordinate system to bc albers
-                QgsProject.instance().setCrs(QgsCoordinateReferenceSystem(3005))
+                QgsProject.instance().setCrs(QgsCoordinateReferenceSystem('EPSG:3005'))
 
                 #build aoi
                 source, aoi_base = test.format_checker(aoi, aoi_wc)
@@ -1011,7 +1011,7 @@ class FNBLine:
                         result = test.merger(feature_layer_lst, layer_title)
                     if result.crs().authid() != 'EPSG:3005':
                         result = test.reproject(result, layer_title)
-                    result.setCrs(QgsCoordinateReferenceSystem(3005),True)
+                    result.setCrs(QgsCoordinateReferenceSystem('EPSG:3005'),True)
                     test.delete_field(result, 'SE_ANNO_CAD_DATA')
                     # Create the htmls for each groupping and prep for map by making layer list for each group
                     group_name = 'g{}'.format(layer_group)
